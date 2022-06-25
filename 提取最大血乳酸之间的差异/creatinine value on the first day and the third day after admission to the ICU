@@ -1,0 +1,60 @@
+create MATERIALIZED view creatinine_reduce as 
+WITH creatinine as (
+SELECT max(le.subject_id) AS subject_id,
+    max(le.hadm_id) AS hadm_id,
+    max(le.charttime) AS charttime,
+    le.specimen_id,
+    max(
+        CASE
+            WHEN ((le.itemid = 50912) AND (le.valuenum <= (150)::double precision)) THEN le.valuenum
+            ELSE NULL::double precision
+        END) AS creatinine
+   FROM mimic_hosp.labevents le
+  WHERE (le.itemid = 50912) AND (le.valuenum IS NOT NULL) AND ((le.valuenum > (0)::double precision))
+  GROUP BY le.specimen_id),
+creatinine_max_1 AS (
+     SELECT t1.stay_id,
+        max(t2.creatinine) AS creatinine_max_1
+       FROM (mimic_icu.icustays t1
+         LEFT JOIN creatinine t2 ON (((t1.subject_id = t2.subject_id) AND (t2.charttime >= datetime_sub(t1.intime, '06:00:00'::interval hour)) AND (t2.charttime <= datetime_add(t1.intime, '1 day'::interval day)))))
+      GROUP BY t1.stay_id
+),creatinine_max_2 AS (
+     SELECT t1.stay_id,
+        max(t2.creatinine) AS creatinine_max_2
+       FROM (mimic_icu.icustays t1
+         LEFT JOIN creatinine t2 ON (((t1.subject_id = t2.subject_id) AND (t2.charttime >= datetime_add(t1.intime, '2 day'::interval day)) AND (t2.charttime <= datetime_add(t1.intime, '3 day'::interval day)))))
+      GROUP BY t1.stay_id
+)
+select t1.stay_id, t1.creatinine_max_1, t2.creatinine_max_2,round((t1.creatinine_max_1-t2.creatinine_max_2)::numeric,1) as creatinine_reduce from creatinine_max_1 t1 left join creatinine_max_2 t2 on t1.stay_id = t2.stay_id where t1.creatinine_max_1 is not null and t2.creatinine_max_2 is not null;
+
+Lactic acid
+
+create MATERIALIZED view lactate_reduce as 
+WITH lactate as (
+SELECT max(le.subject_id) AS subject_id,
+    max(le.hadm_id) AS hadm_id,
+    max(le.charttime) AS charttime,
+    le.specimen_id,
+    max(
+        CASE
+            WHEN ((le.itemid = 50813) AND (le.valuenum <= (10000)::double precision)) THEN le.valuenum
+            ELSE NULL::double precision
+        END) AS lactate
+   FROM mimic_hosp.labevents le
+  WHERE (le.itemid = 50813) AND (le.valuenum IS NOT NULL) AND ((le.valuenum > (0)::double precision))
+  GROUP BY le.specimen_id
+),lactate_max_1 AS (
+     SELECT t1.stay_id,
+        max(t2.lactate) AS lactate_max_1
+       FROM (mimic_icu.icustays t1
+         LEFT JOIN lactate t2 ON (((t1.subject_id = t2.subject_id) AND (t2.charttime >= datetime_sub(t1.intime, '06:00:00'::interval hour)) AND (t2.charttime <= datetime_add(t1.intime, '1 day'::interval day)))))
+      GROUP BY t1.stay_id
+),lactate_max_2 AS (
+     SELECT t1.stay_id,
+        max(t2.lactate) AS lactate_max_2
+       FROM (mimic_icu.icustays t1
+         LEFT JOIN lactate t2 ON (((t1.subject_id = t2.subject_id) AND (t2.charttime >= datetime_add(t1.intime, '2 day'::interval day)) AND (t2.charttime <= datetime_add(t1.intime, '3 day'::interval day)))))
+      GROUP BY t1.stay_id
+)
+select t1.stay_id, t1.lactate_max_1, t2.lactate_max_2,round((t1.lactate_max_1-t2.lactate_max_2)::numeric,1) as lactate_reduce from lactate_max_1 t1 left join lactate_max_2 t2 on t1.stay_id = t2.stay_id where t1.lactate_max_1 is not null and t2.lactate_max_2 is not null;
+

@@ -1,0 +1,24 @@
+查看不同性别人数。
+SELECT gender,COUNT(*) FROM patients GROUP BY gender;
+
+
+SELECT CASE WHEN anchor_age < 18 THEN '<18'
+WHEN anchor_age >= 18 and anchor_age < 60 THEN '18-60'
+WHEN anchor_age >= 60 and anchor_age < 90 THEN '60-89'
+WHEN anchor_age > 90 THEN '>90'
+ELSE NULL END AS age, count(*) AS patients_number
+FROM patients
+GROUP BY 
+CASE WHEN anchor_age < 18 THEN '<18'
+WHEN anchor_age >= 18 and anchor_age < 60 THEN '18-60'
+WHEN anchor_age >= 60 and anchor_age < 90 THEN '60-89'
+WHEN anchor_age > 90 THEN '>90'
+ELSE NULL END;
+
+SELECT COUNT(*) FROM patients ;--38万多条
+
+SELECT CASE WHEN anchor_age<18 THEN '<18' WHEN anchor_age >=18 AND anchor_age<=60 THEN '18-60' WHEN anchor_age>60 AND anchor_age<=90 THEN '61-90' WHEN anchor_age>90 THEN '>90' ELSE NULL END AS age,COUNT(*) FROM patients GROUP BY age;--模仿上面的查询年龄
+
+--简单分组！！！！！！！！！！！！！！
+SELECT anchor_age,"count"(*) FROM patients GROUP BY anchor_age;
+SELECT anchor_year_group, count(*) FROM patients GROUP BY anchor_year_group;
